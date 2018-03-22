@@ -138,6 +138,29 @@ func GoRoutineWithChannel(teams *[]Team) string {
 	return string(jsonBytes)
 }
 
+func SyncExecution(teams *[]Team) string {
+	var newTeams []Team
+	for _, v := range *teams {
+		v.SyncUpdate()
+		newTeams = append(newTeams, v)
+	}
+	jsonBytes, err := json.Marshal(newTeams)
+	if err != nil {
+		fmt.Println("JSON Marshal 4 error:", err)
+		return "Sync Exec Error!"
+	}
+	return string(jsonBytes)
+}
+
+func (c *Team) SyncUpdate() {
+	var services []Service
+	for _, v := range *c.Services {
+		v.Update()
+		services = append(services, v)
+	}
+	c.Services = &services
+}
+
 func main() {
 	teams := Setup()
 	jsonBytes, err := json.Marshal(*teams)
@@ -158,7 +181,9 @@ func main() {
 	fmt.Println("********************************************** Go with Channel")
 	json = GoRoutineWithChannel(teams)
 	fmt.Println(json)
-
+	fmt.Println("********************************************** Go with Sync exec")
+	json = SyncExecution(teams)
+	fmt.Println(json)
 	fmt.Println("********************************************** Go without Channel")
 	result := testing.Benchmark(func(b *testing.B) { GoRoutineWithoutChannel(teams) })
 	fmt.Printf("Benchmark Repeat: %d Duration: %v Bytes: %d  Memory Allocation: %d Memory Bytes: %d\n", result.N, result.T, result.Bytes, result.MemAllocs, result.MemBytes)
@@ -169,6 +194,10 @@ func main() {
 	fmt.Println(result)
 	fmt.Println("********************************************** Go with Channel")
 	result = testing.Benchmark(func(b *testing.B) { GoRoutineWithChannel(teams) })
+	fmt.Printf("Benchmark Repeat: %d Duration: %v Bytes: %d  Memory Allocation: %d Memory Bytes: %d\n", result.N, result.T, result.Bytes, result.MemAllocs, result.MemBytes)
+	fmt.Println(result)
+	fmt.Println("********************************************** Go with Sync exec")
+	result = testing.Benchmark(func(b *testing.B) { SyncExecution(teams) })
 	fmt.Printf("Benchmark Repeat: %d Duration: %v Bytes: %d  Memory Allocation: %d Memory Bytes: %d\n", result.N, result.T, result.Bytes, result.MemAllocs, result.MemBytes)
 	fmt.Println(result)
 }
